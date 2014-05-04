@@ -27,17 +27,23 @@
 
 - name: Install Ruby 2.0
   sudo: yes
-  shell: mkdir /tmp/ruby && cd /tmp/ruby && curl --progress ftp://ftp.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p353.tar.gz | tar xz && cd ruby-2.0.0-p353 && ./configure --disable-install-rdoc && make && sudo make install creates=/opt/ruby/bin/ruby
-
-- name: Install Bundler Gem
-  sudo: yes
-  gem: name=bundler state=latest
+  shell: creates=/usr/local/bin/ruby mkdir /tmp/ruby && cd /tmp/ruby && curl --progress ftp://ftp.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p353.tar.gz | tar xz && cd ruby-2.0.0-p353 && ./configure --disable-install-rdoc && make && sudo make install
 
 - name: Add the gitlab_ci_runner user
   sudo: yes
-  user: name=gitlab_ci_runner comment="GitLab CI Runner"
+  user: name=gitlab_ci_runner comment="GitLab CI Runner" groups=sudo shell=/bin/bash
 
 - name: Clone GitLab CI
   sudo: yes
   sudo_user: gitlab_ci_runner
-  git: repo=https://github.com/mivok/ansible-users.git dest=/home/gitlab_ci_runner/gitlab-ci-runner update=yes
+  git: repo=https://github.com/gitlabhq/gitlab-ci-runner.git dest={{ install_path }} update=yes
+
+- name: Install Ruby Gems
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: chdir={{ install_path }} gem install bundler -N --user-install && BUNDLE_PATH={{ gem_path }} {{ gem_path }}/bundle install --deployment
+
+- name: Run GitLab CI Runner setup
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: chdir={{ install_path }} BUNDLE_PATH={{ gem_path }} CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} {{ gem_path }}/bundle exec ./bin/setup
