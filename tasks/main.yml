@@ -31,3 +31,6 @@
 
 - name: Install Bundler Gem
   gem: name=bundler state=latest
+
+- name: Add the gitlab_ci_runner user
+  user: name=gitlab_ci_runner comment="GitLab CI Runner"
