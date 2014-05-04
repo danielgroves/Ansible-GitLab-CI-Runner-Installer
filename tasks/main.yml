@@ -36,3 +36,8 @@
 - name: Add the gitlab_ci_runner user
   sudo: yes
   user: name=gitlab_ci_runner comment="GitLab CI Runner"
+
+- name: Clone GitLab CI
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  git: repo=https://github.com/mivok/ansible-users.git dest=/home/gitlab_ci_runner/gitlab-ci-runner update=yes
