@@ -1,0 +1,3 @@
+- name: start gitlab ci
+  sudo: yes
+  service: name=gitlab-ci-runner state=started

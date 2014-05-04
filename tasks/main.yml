@@ -2,7 +2,7 @@
   sudo: yes
   apt: update_cache=yes
 
-- name: Install Dependencies
+- name: Install dependencies
   sudo: yes
   apt: pkg={{ item }} state=latest
   with_items:
@@ -38,12 +38,27 @@
   sudo_user: gitlab_ci_runner
   git: repo=https://github.com/gitlabhq/gitlab-ci-runner.git dest={{ install_path }} update=yes
 
-- name: Install Ruby Gems
-  sudo: yes
-  sudo_user: gitlab_ci_runner
-  shell: chdir={{ install_path }} gem install bundler -N --user-install && BUNDLE_PATH={{ gem_path }} {{ gem_path }}/bundle install --deployment
+#- name: Install Ruby Gems
+#  sudo: yes
+#  sudo_user: gitlab_ci_runner
+#  shell: chdir={{ install_path }} gem install bundler -N --user-install && BUNDLE_PATH={{ gem_path }} {{ gem_path }}/bundle install --deployment
 
-- name: Run GitLab CI Runner setup
+#- name: Run GitLab CI Runner setup
+#  sudo: yes
+#  sudo_user: gitlab_ci_runner
+#  shell: chdir={{ install_path }} BUNDLE_PATH={{ gem_path }} CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} {{ gem_path }}/bundle exec ./bin/setup
+
+- name: Add remote to known_hosts
   sudo: yes
   sudo_user: gitlab_ci_runner
-  shell: chdir={{ install_path }} BUNDLE_PATH={{ gem_path }} CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} {{ gem_path }}/bundle exec ./bin/setup
+  shell: ssh-keyscan {{ ci_ssh_server }} >> /home/gitlab_ci_runner/.ssh/known_hosts
+
+- name: Install init.d
+  sudo: yes
+  template: src=init.d.j2 dest=/etc/init.d/gitlab-ci-runner mode=0755 owner=root group=root
+
+- name: Install as service
+  sudo: yes
+  command: update-rc.d gitlab-ci-runner defaults 21
+  notify:
+      - start gitlab ci
