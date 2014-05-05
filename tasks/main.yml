@@ -79,6 +79,9 @@
   sudo: yes
   command: update-rc.d gitlab-ci-runner defaults 21
 
+# Uses a temporary work around as described in ansible/#7284
+# https://github.com/ansible/ansible/issues/7284
+
 - name: Start runner
   sudo: yes
   command: service gitlab-ci-runner start
