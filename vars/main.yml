@@ -1,2 +1,3 @@
 install_path: /home/gitlab_ci_runner/gitlab-ci-runner
 gem_path: /home/gitlab_ci_runner/.gem/ruby/2.0.0/bin
+ruby_version: ruby-2.0.0-p353

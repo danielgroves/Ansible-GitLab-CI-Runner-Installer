@@ -25,28 +25,34 @@
       - libpq-dev
       - libicu-dev
 
-- name: Install Ruby 2.0
-  sudo: yes
-  shell: creates=/usr/local/bin/ruby mkdir /tmp/ruby && cd /tmp/ruby && curl --progress ftp://ftp.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p353.tar.gz | tar xz && cd ruby-2.0.0-p353 && ./configure --disable-install-rdoc && make && sudo make install
-
 - name: Add the gitlab_ci_runner user
   sudo: yes
   user: name=gitlab_ci_runner comment="GitLab CI Runner" groups=sudo shell=/bin/bash
+
+- name: Install RVM
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: \curl -L https://get.rvm.io | bash -s stable --autolibs=3 creates=~/.rvm
+
+- name: Install Ruby {{ ruby_version }}
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: ~/.rvm/bin/rvm install --default {{ ruby_version }} creates=~/.rvm/rubies/{{ ruby_version }}
 
 - name: Clone GitLab CI
   sudo: yes
   sudo_user: gitlab_ci_runner
   git: repo=https://github.com/gitlabhq/gitlab-ci-runner.git dest={{ install_path }} update=yes
 
-#- name: Install Ruby Gems
-#  sudo: yes
-#  sudo_user: gitlab_ci_runner
-#  shell: chdir={{ install_path }} gem install bundler -N --user-install && BUNDLE_PATH={{ gem_path }} {{ gem_path }}/bundle install --deployment
+- name: Install Ruby Gems
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: chdir={{ install_path }} /bin/bash --login -c 'gem install bundler && bundle install --deployment'
 
-#- name: Run GitLab CI Runner setup
-#  sudo: yes
-#  sudo_user: gitlab_ci_runner
-#  shell: chdir={{ install_path }} BUNDLE_PATH={{ gem_path }} CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} {{ gem_path }}/bundle exec ./bin/setup
+- name: Run GitLab CI Runner setup
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: chdir={{ install_path }} /bin/bash --login -c 'CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} bundle exec ./bin/setup'
 
 - name: Add remote to known_hosts
   sudo: yes
@@ -55,9 +61,13 @@
 
 - name: Install init.d
   sudo: yes
-  template: src=init.d.j2 dest=/etc/init.d/gitlab-ci-runner mode=0755 owner=root group=root
+  command: cp -f {{ install_path }}/lib/support/init.d/gitlab_ci_runner /etc/init.d/gitlab-ci-runner
 
-- name: Install as service
+- name: Set service permissions
+  sudo: yes
+  file: path=/etc/init.d/gitlab-ci-runner owner=root group=root mode=0755
+
+- name: Install as boot service
   sudo: yes
   command: update-rc.d gitlab-ci-runner defaults 21
   notify:
