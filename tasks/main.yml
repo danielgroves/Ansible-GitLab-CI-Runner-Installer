@@ -49,23 +49,31 @@
   sudo_user: gitlab_ci_runner
   shell: chdir={{ install_path }} /bin/bash --login -c 'gem install bundler && bundle install --deployment'
 
+- name: Check if SSH keys are presnt
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  stat: path=/home/gitlab_ci_runner/.ssh/id_rsa
+  register: ssh_keys
+  ignore_errors: yes
+
+- name: Do the SSH keys exist?
+  debug: msg="Skipping runner configuration" var=ssh_keys.stat.exists
+  when: ssh_keys.stat.exists
+
 - name: Run GitLab CI Runner setup
   sudo: yes
   sudo_user: gitlab_ci_runner
   shell: chdir={{ install_path }} /bin/bash --login -c 'CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} bundle exec ./bin/setup'
+  when: ssh_keys.stat.exists == false
 
 - name: Add remote to known_hosts
   sudo: yes
   sudo_user: gitlab_ci_runner
   shell: ssh-keyscan {{ ci_ssh_server }} >> /home/gitlab_ci_runner/.ssh/known_hosts
 
-- name: Install init.d
-  sudo: yes
-  command: cp -f {{ install_path }}/lib/support/init.d/gitlab_ci_runner /etc/init.d/gitlab-ci-runner
-
 - name: Set service permissions
   sudo: yes
-  file: src={{ install_path }}/lib/support/init.d/gitlab_ci_runner path=/etc/init.d/gitlab-ci-runner state=link owner=root group=root mode=0755 force=yes
+  file: src={{ install_path }}/lib/support/init.d/gitlab_ci_runner path=/etc/init.d/gitlab-ci-runner state=link owner=root group=root mode=0755
 
 - name: Install as boot service
   sudo: yes
