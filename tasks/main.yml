@@ -63,7 +63,7 @@
 - name: Run GitLab CI Runner setup
   sudo: yes
   sudo_user: gitlab_ci_runner
-  shell: chdir={{ install_path }} /bin/bash --login -c 'CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} bundle exec ./bin/setup'
+  shell: chdir={{ install_path }} /bin/bash --login -c 'CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} bundle exec ./bin/setup' #'
   when: ssh_keys.stat.exists == false
 
 - name: Add remote to known_hosts
@@ -78,5 +78,13 @@
 - name: Install as boot service
   sudo: yes
   command: update-rc.d gitlab-ci-runner defaults 21
-  notify:
-      - start gitlab ci
+
+- name: Start runner
+  sudo: yes
+  command: service gitlab-ci-runner start
+  when: ssh_keys.stat.exists == false
+
+- name: Restart runner
+  sudo: yes
+  command: service gitlab-ci-runner restart
+  when: ssh_keys.stat.exists
