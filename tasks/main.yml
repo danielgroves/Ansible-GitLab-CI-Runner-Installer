@@ -65,7 +65,7 @@
 
 - name: Set service permissions
   sudo: yes
-  file: path=/etc/init.d/gitlab-ci-runner owner=root group=root mode=0755
+  file: src={{ install_path }}/lib/support/init.d/gitlab_ci_runner path=/etc/init.d/gitlab-ci-runner state=link owner=root group=root mode=0755 force=yes
 
 - name: Install as boot service
   sudo: yes
