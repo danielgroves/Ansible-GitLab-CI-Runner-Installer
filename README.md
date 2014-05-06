@@ -2,12 +2,21 @@
 
 Installs the GitLab CI Runner as par the instructions provided.
 
-To use, simply add as a sub-repository or clone into your project and configure with the variable shown below.
+To use, simply add as a sub-repository or clone into your project and pass in the required variables below.
+
+* `ci_server`: The full URL for the server, including http(s)://
+* `ci_token`: The registration token provided by GitLab CI
+* `ci_ssh_server`: The SSH address for the server, normally the same as the ci_server address.
+
+The example configuration below shows example values.
 
 ```
 - hosts: all
   roles:
-      - { role: gitlab-ci-runner, ci_server: "WEB ADDRESS FOR YOUR SERVER", ci_token: "THE TOKEN GIVEN BY GITLAB CI", ci_ssh_server: "THE DOMAIN AGAIN, WITHOUT http(s)://" }
+      - { role: gitlab-ci-runner,
+          ci_server: "http://ci.example.com",
+          ci_token: "f31abbde917e74d6f517",
+          ci_ssh_server: "ci.example.com" }
 ```
 
-A decent read me will appear once the ruby problems have been fixed. 
+The playbook is MIT licensed. See LICENSE for full details.
