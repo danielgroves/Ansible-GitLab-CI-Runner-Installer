@@ -1,3 +1,7 @@
+- name: Stop any runners
+  sudo: yes
+  command: service gitlab-ci-runner stop
+
 - name: Update APT
   sudo: yes
   apt: update_cache=yes
@@ -84,9 +88,4 @@
 - name: Start runner
   sudo: yes
   command: service gitlab-ci-runner start
-  when: ssh_keys.stat.exists == false
-
-- name: Restart runner
-  sudo: yes
-  command: service gitlab-ci-runner restart
-  when: ssh_keys.stat.exists
+  when: start_runner
