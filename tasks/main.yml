@@ -4,6 +4,7 @@
 - name: Stop any runners
   sudo: yes
   command: service gitlab-ci-runner stop
+  ignore_errors: yes
 
 - name: Install dependencies
   sudo: yes
