@@ -29,25 +29,19 @@
   sudo: yes
   user: name=gitlab_ci_runner comment="GitLab CI Runner" groups=sudo shell=/bin/bash
 
-- name: Install RVM
+- name: Install {{ ruby_version }}
   sudo: yes
-  sudo_user: gitlab_ci_runner
-  shell: \curl -L https://get.rvm.io | bash -s stable --autolibs=3 creates=~/.rvm
+  shell: creates=/usr/local/bin/ruby mkdir /tmp/ruby && cd /tmp/ruby && curl --progress ftp://ftp.ruby-lang.org/pub/ruby/2.0/{{ ruby_version }}.tar.gz | tar xz && cd {{ ruby_version }} && ./configure --disable-install-rdoc && make && sudo make install
 
-- name: Install Ruby {{ ruby_version }}
+- name: Clone GitLab CI {{ gitlab_version }}
   sudo: yes
   sudo_user: gitlab_ci_runner
-  shell: ~/.rvm/bin/rvm install --default {{ ruby_version }} creates=~/.rvm/rubies/{{ ruby_version }}
-
-- name: Clone GitLab CI
-  sudo: yes
-  sudo_user: gitlab_ci_runner
-  git: repo=https://github.com/gitlabhq/gitlab-ci-runner.git dest={{ install_path }} update=yes
+  git: repo=https://github.com/gitlabhq/gitlab-ci-runner.git dest={{ install_path }} update=yes version={{ gitlab_version }}
 
 - name: Install Ruby Gems
   sudo: yes
   sudo_user: gitlab_ci_runner
-  shell: chdir={{ install_path }} /bin/bash --login -c 'gem install bundler && bundle install --deployment'
+  shell: chdir={{ install_path }} sudo gem install bundler && sudo bundle install --deployment
 
 - name: Check if SSH keys are presnt
   sudo: yes
@@ -60,16 +54,21 @@
   debug: msg="Skipping runner configuration" var=ssh_keys.stat.exists
   when: ssh_keys.stat.exists
 
-- name: Run GitLab CI Runner setup
+- name: Ensure .ssh present
   sudo: yes
   sudo_user: gitlab_ci_runner
-  shell: chdir={{ install_path }} /bin/bash --login -c 'CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} bundle exec ./bin/setup' #'
-  when: ssh_keys.stat.exists == false
+  file: path=/home/gitlab_ci_runner/.ssh/ state=directory
 
 - name: Add remote to known_hosts
   sudo: yes
   sudo_user: gitlab_ci_runner
   shell: ssh-keyscan {{ ci_ssh_server }} >> /home/gitlab_ci_runner/.ssh/known_hosts
+
+- name: Run GitLab CI Runner setup
+  sudo: yes
+  sudo_user: gitlab_ci_runner
+  shell: chdir={{ install_path }} CI_SERVER_URL={{ ci_server }} REGISTRATION_TOKEN={{ ci_token }} bundle exec ./bin/setup
+  when: ssh_keys.stat.exists == false
 
 - name: Set service permissions
   sudo: yes
