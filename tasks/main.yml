@@ -5,13 +5,9 @@
   sudo: yes
   command: service gitlab-ci-runner stop
 
-- name: Update APT
-  sudo: yes
-  apt: update_cache=yes
-
 - name: Install dependencies
   sudo: yes
-  apt: pkg={{ item }} state=latest
+  apt: pkg={{ item }} state=latest update_cache=yes
   with_items:
       - wget
       - curl
@@ -50,16 +46,12 @@
   sudo_user: gitlab_ci_runner
   shell: chdir={{ install_path }} sudo gem install bundler && sudo bundle install --deployment
 
-- name: Check if SSH keys are presnt
+- name: Check if SSH keys are present
   sudo: yes
   sudo_user: gitlab_ci_runner
   stat: path=/home/gitlab_ci_runner/.ssh/id_rsa
   register: ssh_keys
   ignore_errors: yes
-
-- name: Do the SSH keys exist?
-  debug: msg="Skipping runner configuration" var=ssh_keys.stat.exists
-  when: ssh_keys.stat.exists
 
 - name: Ensure .ssh present
   sudo: yes
@@ -71,6 +63,8 @@
   sudo_user: gitlab_ci_runner
   shell: ssh-keyscan {{ ci_ssh_server }} >> /home/gitlab_ci_runner/.ssh/known_hosts
 
+# If the SSH keys already exist then the configuration ahs already been done
+# Running this again would add a new runner to the system
 - name: Run GitLab CI Runner setup
   sudo: yes
   sudo_user: gitlab_ci_runner
