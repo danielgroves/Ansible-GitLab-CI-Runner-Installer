@@ -1,3 +1,6 @@
+# Uses a temporary work around as described in ansible/#7284
+# https://github.com/ansible/ansible/issues/7284
+
 - name: Stop any runners
   sudo: yes
   command: service gitlab-ci-runner stop
